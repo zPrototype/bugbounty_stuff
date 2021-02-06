@@ -5,6 +5,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--threads", "-t", help="Enter the number of threads you want to use", default=True)
 parser.add_argument("--urls", "-u", help="Enter a file of URLs you want to test", required=True)
 parser.add_argument("--script", "-s", help="Enter the path for the script", required=True)
 parser.add_argument("--output", "-o", help="Enter the name for an output file")
@@ -28,7 +29,7 @@ def execute_script(url, script):
     return list(output)
 
 
-with ThreadPoolExecutor(max_workers=4) as executor:
+with ThreadPoolExecutor(max_workers=args.threads) as executor:
     for url in urls:
         results.append((url, executor.submit(execute_script, url, args.script)))
 

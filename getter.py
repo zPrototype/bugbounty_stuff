@@ -2,6 +2,7 @@ import requests
 import argparse
 from urllib3.exceptions import InsecureRequestWarning
 from concurrent.futures import ThreadPoolExecutor
+from rich.progress import track
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--file", "-f", help="Enter a file with URLs to check", required=True)
@@ -17,7 +18,10 @@ urls = list(map(lambda x: x.rstrip(), urls))
 
 def make_request(url):
     requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-    res = requests.get(url, verify=False).status_code
+    try:
+        res = requests.get(url, verify=False).status_code
+    except:
+        res = False
     return res
 
 

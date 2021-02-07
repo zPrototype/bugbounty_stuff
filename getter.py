@@ -1,0 +1,35 @@
+import requests
+import argparse
+from urllib3.exceptions import InsecureRequestWarning
+from concurrent.futures import ThreadPoolExecutor
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--file", "-f", help="Enter a file with URLs to check", required=True)
+parser.add_argument("--output", "-o", help="Enter the name of a output file", required=True)
+args = parser.parse_args()
+
+results = []
+
+with open(args.file) as handle:
+    urls = handle.readlines()
+urls = list(map(lambda x: x.rstrip(), urls))
+
+
+def make_request(url):
+    requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+    res = requests.get(url, verify=False).status_code
+    return res
+
+
+with ThreadPoolExecutor(max_workers=10) as executor:
+    for url in urls:
+        results.append((url, executor.submit(make_request, url)))
+
+results = map(lambda r: (r[0], r[1].result()), results)
+results = list(filter(lambda x: x[1], results))
+
+for url, status_code in results:
+    print(url, status_code)
+
+with open(args.output, "w") as handle:
+    handle.write("\n".join(f"{x[0]}, {x[1]}" for x in results))

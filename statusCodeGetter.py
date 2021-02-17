@@ -19,7 +19,7 @@ urls = list(map(lambda x: x.rstrip(), urls))
 def make_request(url):
     requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
     try:
-        res = requests.get(url, verify=False).status_code
+        res = requests.get(url, verify=False, allow_redirects=False).status_code
     except:
         res = False
     return res

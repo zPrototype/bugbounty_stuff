@@ -2,13 +2,14 @@ import requests
 import argparse
 from urllib3.exceptions import InsecureRequestWarning
 from concurrent.futures import ThreadPoolExecutor
-from rich.progress import track
+from rich.console import Console
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--file", "-f", help="Enter a file with URLs to check", required=True)
 parser.add_argument("--output", "-o", help="Enter the name of a output file", required=True)
 args = parser.parse_args()
 
+CONSOLE = Console()
 results = []
 
 with open(args.file) as handle:
@@ -24,10 +25,11 @@ def make_request(url):
         res = False
     return res
 
-
 with ThreadPoolExecutor(max_workers=10) as executor:
-    for url in urls:
-        results.append((url, executor.submit(make_request, url)))
+    with CONSOLE.status("") as status:
+        for i, url in enumerate(urls):
+            status.update(f"[cyan]Working on statuscodes... ({i}/{len(urls)})")
+            results.append((url, executor.submit(make_request, url)))
 
 results = map(lambda r: (r[0], r[1].result()), results)
 results = list(filter(lambda x: x[1], results))

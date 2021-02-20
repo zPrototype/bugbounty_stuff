@@ -34,7 +34,7 @@ with ThreadPoolExecutor(max_workers=10) as executor:
     with Progress("[progress.description]{task.description}", BarColumn(),
                   "[progress.percentage]{task.percentage:>3.0f}%", TimeRemainingColumn(),
                   "[deep_sky_blue1]{task.completed} of {task.total}") as progress:
-        my_task = progress.add_task("[green]Dorking...", total=len(results))
+        my_task = progress.add_task("[green]Working on it...", total=len(results))
         count_remaining = len(list(filter(lambda f: not f[1].done(), results)))
         while count_remaining > 0:
             count_remaining = len(list(filter(lambda f: not f[1].done(), results)))
@@ -48,4 +48,4 @@ for url, status_code in results:
     print(url, status_code)
 
 with open(args.output, "w") as handle:
-    handle.write("\n".join(f"{x[0]}, {x[1]}" for x in results))
+    handle.write("\n".join(f"{x[0]} {x[1]}" for x in results))

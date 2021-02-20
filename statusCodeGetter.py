@@ -1,5 +1,6 @@
 import requests
 import argparse
+import time
 from urllib3.exceptions import InsecureRequestWarning
 from concurrent.futures import ThreadPoolExecutor
 from rich.progress import Progress, BarColumn, TimeRemainingColumn

@@ -8,6 +8,7 @@ from rich.progress import Progress, BarColumn, TimeRemainingColumn
 parser = argparse.ArgumentParser()
 parser.add_argument("--file", "-f", help="Enter a file with URLs to check", required=True)
 parser.add_argument("--output", "-o", help="Enter the name of a output file", required=True)
+parser.add_argument("--threads", "-t", help="Enter the number of threads. (Default is 10)", default=10)
 args = parser.parse_args()
 
 results = []
@@ -20,13 +21,13 @@ urls = list(map(lambda x: x.rstrip(), urls))
 def make_request(url):
     requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
     try:
-        res = requests.get(url, verify=False, allow_redirects=False).status_code
+        res = requests.get(url, verify=False, allow_redirects=False, timeout=10).status_code
     except:
         res = False
     return res
 
 
-with ThreadPoolExecutor(max_workers=10) as executor:
+with ThreadPoolExecutor(max_workers=20) as executor:
     for i, url in enumerate(urls):
         results.append((url, executor.submit(make_request, url)))
 

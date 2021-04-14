@@ -1,5 +1,13 @@
 #!/bin/bash
 
+#Check if the necessary tools are installed
+if [ ! -x "$(command -v findomain)" ]; then echo "findomain is not installed!"; >&2; exit 1; fi
+if [ ! -x "$(command -v sublist3r)" ]; then echo "sublist3r is not installed!"; >&2; exit 1; fi
+if [ ! -x "$(command -v assetfinder)" ]; then echo "assetfinder is not installed!"; >&2; exit 1; fi
+if [ ! -x "$(command -v subfinder)" ]; then echo "subfinder is not installed!"; >&2; exit 1; fi
+if [ ! -x "$(command -v httpx)" ]; then echo "httpx is not installed!"; >&2; exit 1; fi
+
+# Use flags to take in arguments
 while getopts d:s:t: flag
 do
 	case "${flag}" in
@@ -9,6 +17,7 @@ do
 	esac
 done
 
+# Check if a domain was supplied
 if [ -z "$domain" ]
 then
 	echo "Target parameter -d not specified!"

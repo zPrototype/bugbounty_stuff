@@ -21,8 +21,8 @@ os.makedirs(TEMP_PATH, exist_ok=True)
 
 
 def print_banner():
-    print()
-    print("""███████╗██╗   ██╗██████╗ ██╗  ██╗██╗██╗     ██╗     ███████╗██████╗ 
+    print("""
+███████╗██╗   ██╗██████╗ ██╗  ██╗██╗██╗     ██╗     ███████╗██████╗ 
 ██╔════╝██║   ██║██╔══██╗██║ ██╔╝██║██║     ██║     ██╔════╝██╔══██╗
 ███████╗██║   ██║██████╔╝█████╔╝ ██║██║     ██║     █████╗  ██████╔╝
 ╚════██║██║   ██║██╔══██╗██╔═██╗ ██║██║     ██║     ██╔══╝  ██╔══██╗
@@ -45,11 +45,12 @@ def bootstrab_db():
     conn.execute("CREATE TABLE IF NOT EXISTS domains (domain text unique)")
     conn.execute("CREATE TABLE IF NOT EXISTS rawsubdomains (subdomain text unique)")
     conn.execute(
-        """CREATE TABLE IF NOT EXISTS results (
+            """CREATE TABLE IF NOT EXISTS results (
             protocol text,
             domain text,
             port integer,
-            statuscode integer,
+            statuscode text,
+            title text,
             rawstr text,
             unique(domain,port)
         )""")
@@ -145,13 +146,13 @@ def do_probing():
         handle.write('\n'.join(subdomains))
 
     httpx_cmd = f"httpx -l {TEMP_PATH}/unprobed.out -silent -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; " \
-                "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
-                f"-no-color -websocket -o {TEMP_PATH}/httpx_subs.txt"
+            "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
+            f"-no-color -follow-redirects -title -websocket -o {TEMP_PATH}/httpx_subs.txt"
     subprocess.run(httpx_cmd, shell=True)
 
     with open(f"{TEMP_PATH}/httpx_subs.txt", "r") as handle:
         probed_subs = handle.readlines()
-    httpx_re = re.compile(r"(.*?//)(.*):(\d*) \[(\d*)]")
+    httpx_re = re.compile(r"(.*?//)(.*):(\d*) \[(.*)] \[(.*)]")
     to_insert = []
     for sub in probed_subs:
         matched = httpx_re.match(sub)
@@ -159,11 +160,11 @@ def do_probing():
             matched.group(1),
             matched.group(2),
             int(matched.group(3)),
-            int(matched.group(4)),
+            matched.group(4),
+            matched.group(5),
             matched.group(0)
-        ))
-
-    conn.executemany("INSERT OR IGNORE INTO results VALUES (?, ?, ?, ?, ?)", to_insert)
+            ))
+    conn.executemany("INSERT OR IGNORE INTO results VALUES (?, ?, ?, ?, ?, ?)", to_insert)
     conn.commit()
 
 

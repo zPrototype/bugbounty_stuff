@@ -5,8 +5,10 @@ import sqlite3
 import os
 import shutil
 import time
+from rich.console import Console
 
 TEMP_PATH = "_tmp"
+CONSOLE = Console()
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
@@ -29,7 +31,7 @@ def print_banner():
 ███████║╚██████╔╝██████╔╝██║  ██╗██║███████╗███████╗███████╗██║  ██║
 ╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝
                                                                     """)
-    print("\033[1mDeveloped by iCaotix and 0xPrototype\033[0m")
+    print("\033[1mDeveloped by iCaotix and 0xPrototype\033[0m\n")
 
 
 def check_for_tools():
@@ -37,7 +39,7 @@ def check_for_tools():
     for tool in required_tools:
         check_tool_flag = shutil.which(tool)
         if check_tool_flag is None:
-            print(f"{tool} is not installed! Exiting...")
+            CONSOLE.print(f"[bold red]{tool} is not installed! Exiting...")
             exit(1)
 
 
@@ -96,9 +98,9 @@ def do_findomain_scan(target):
 
     findomain_cmd = f"findomain -t {target} -u {TEMP_PATH}/{target}.fd"
     if env:
-        subprocess.run(findomain_cmd, env=env, shell=True)
+        subprocess.run(findomain_cmd, env=env, shell=True, stdout=subprocess.DEVNULL)
     else:
-        subprocess.run(findomain_cmd, shell=True)
+        subprocess.run(findomain_cmd, shell=True, stdout=subprocess.DEVNULL)
 
     with open(f"{TEMP_PATH}/{target}.fd", "r") as handle:
         result = handle.readlines()
@@ -109,7 +111,7 @@ def do_findomain_scan(target):
 
 def do_sublist3r_scan(target):
     sublist3r_cmd = f"sublist3r -d {target} -o {TEMP_PATH}/{target}.sl"
-    subprocess.run(sublist3r_cmd, shell=True)
+    subprocess.run(sublist3r_cmd, shell=True, stdout=subprocess.DEVNULL)
 
     with open(f"{TEMP_PATH}/{target}.sl", "r") as handle:
         result = handle.readlines()
@@ -120,7 +122,7 @@ def do_sublist3r_scan(target):
 
 def do_subfinder_scan(target):
     subfinder_cmd = f"subfinder -d {target} -o {TEMP_PATH}/{target}.sf"
-    subprocess.run(subfinder_cmd, shell=True)
+    subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
 
     with open(f"{TEMP_PATH}/{target}.sf", "r") as handle:
         result = handle.readlines()
@@ -131,7 +133,7 @@ def do_subfinder_scan(target):
 
 def do_assetfinder_scan(target):
     assetfinder_cmd = f"assetfinder --subs-only {target}"
-    assetfinder_output = subprocess.check_output(assetfinder_cmd, shell=True)
+    assetfinder_output = subprocess.check_output(assetfinder_cmd, shell=True, stdin=subprocess.DEVNULL)
     assetfinder_output = assetfinder_output.decode().splitlines()
     assetfinder_output = list(map(lambda r: (r.strip(),), assetfinder_output))
 
@@ -148,7 +150,7 @@ def do_probing():
     httpx_cmd = f"httpx -l {TEMP_PATH}/unprobed.out -silent -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; " \
             "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
             f"-no-color -follow-redirects -title -websocket -o {TEMP_PATH}/httpx_subs.txt"
-    subprocess.run(httpx_cmd, shell=True)
+    subprocess.run(httpx_cmd, shell=True, stdout=subprocess.DEVNULL)
 
     with open(f"{TEMP_PATH}/httpx_subs.txt", "r") as handle:
         probed_subs = handle.readlines()
@@ -202,15 +204,26 @@ def cleanup():
 def main():
     print_banner()
     time.sleep(4)
-    check_for_tools()
-    bootstrab_db()
-    requested_domains = process_input()
-    insert_domains(requested_domains)
-    domains_to_scan = get_domains_to_scan()
-    start_scans(domains_to_scan)
-    do_probing()
-    export_results()
-    cleanup()
+    with CONSOLE.status("") as status:
+        check_for_tools()
+        CONSOLE.print("[cyan]Tool check done!")
+        bootstrab_db()
+        CONSOLE.print("[cyan]Bootstrapped database!")
+        requested_domains = process_input()
+        insert_domains(requested_domains)
+        domains_to_scan = get_domains_to_scan()
+        status.update("[bold yellow]Scanning for subdomains...")
+        start_scans(domains_to_scan)
+        CONSOLE.print("[cyan]Scanning done!")
+        status.update("[bold yellow]Probing subdomains...")
+        do_probing()
+        CONSOLE.print("[cyan]Probing done!")
+        export_results()
+        cleanup()
+        CONSOLE.print("[cyan]Exported results")
+        CONSOLE.print("[cyan]Cleaned temporary directory")
+        print()
+        CONSOLE.print("[bold green]Finished!")
 
 
 if __name__ == '__main__':

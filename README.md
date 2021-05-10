@@ -9,6 +9,7 @@ Subkiller requires a few tools to be pre installed on your system
 - Subfinder => https://github.com/projectdiscovery/subfinder
 - Findomain => https://github.com/Findomain/Findomain
 - Assetfinder => https://github.com/tomnomnom/assetfinder
+- GAU => https://github.com/lc/gau
 - Httpx => https://github.com/projectdiscovery/httpx
 > Note: It also requires the rich python library. **pip3 install rich**
 
@@ -16,10 +17,11 @@ The usage is as follows:
 > `python3 subkiller.py -d <domain> OR -f  <file with domains>`
 > Optionally you can also specify your spyse api key with `-sp <spyse_key>` or your securitytrails key with `-st <securitytrails_key>`
 
-Subkiller will output a sqlite file called `enumsubs.sb` as well as three other files:
+Subkiller will output a sqlite file called `enumsubs.db` as well as four other files:
 - master.txt => All found and probed subdomains with the corresponding port
 - statuscodes.txt => Complete httpx output including redirect chains and site title
 - 403.txt => All subdomains that returned a 403 status code. Use this file with the next tool ;)
+- waybacks.txt => Containing all waybackurls for the provided target/s
 
 ## Bypass forbidden
 This tool automates the process of trying various bypasses for 403 status codes. You will find two scripts inside this directory: `bypass.sh` and `wrapper.py`. The usage is very simple you need to supply three arguments:

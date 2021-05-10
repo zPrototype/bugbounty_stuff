@@ -4,7 +4,6 @@ import argparse
 import sqlite3
 import os
 import shutil
-import time
 from rich.console import Console
 
 TEMP_PATH = "_tmp"
@@ -35,7 +34,7 @@ def print_banner():
 
 
 def check_for_tools():
-    required_tools = ["findomain", "subfinder", "sublist3r", "assetfinder", "httpx"]
+    required_tools = ["findomain", "subfinder", "sublist3r", "assetfinder", "gau", "httpx"]
     for tool in required_tools:
         check_tool_flag = shutil.which(tool)
         if check_tool_flag is None:
@@ -56,6 +55,7 @@ def bootstrab_db():
             rawstr text,
             unique(domain,port)
         )""")
+    conn.execute("CREATE TABLE IF NOT EXISTS waybackurls (waybackurl text unique)")
     conn.commit()
 
 
@@ -170,6 +170,19 @@ def do_probing():
     conn.commit()
 
 
+def get_waybackurls(domain_list):
+    for target in domain_list: 
+        gau_cmd = f"""bash -c "echo '{target}' | gau -b ttf,woff,svg,png,jpg -o {TEMP_PATH}/{target}.gau" """
+        subprocess.run(gau_cmd, shell=True, stdout=subprocess.DEVNULL)
+        
+        with open(f"{TEMP_PATH}/{target}.gau", "r") as handle:
+            result = handle.readlines()
+        result = list(map(lambda r: (r.strip(),), result))
+        
+        conn.executemany("INSERT OR IGNORE INTO waybackurls VALUES (?)", result)
+        conn.commit()
+
+
 def export_results():
     # master.txt
     results = conn.execute("SELECT protocol, domain, port FROM results WHERE statuscode != 429")
@@ -194,6 +207,12 @@ def export_results():
     with open("403.txt", "w") as handle:
         handle.write("\n".join(export_lines))
 
+    # wayback.txt
+    results = conn.execute("SELECT waybackurl FROM waybackurls")
+    export_lines = map(lambda w: w[0], results)
+    with open("waybacks.txt", "w") as handle:
+        handle.write("\n".join(export_lines))
+
 
 def cleanup():
     shutil.rmtree(TEMP_PATH)
@@ -203,7 +222,6 @@ def cleanup():
 
 def main():
     print_banner()
-    time.sleep(4)
     with CONSOLE.status("") as status:
         check_for_tools()
         CONSOLE.print("[cyan]Tool check done!")
@@ -218,6 +236,9 @@ def main():
         status.update("[bold yellow]Probing subdomains...")
         do_probing()
         CONSOLE.print("[cyan]Probing done!")
+        status.update("[bold yellow]Searching for waybackurls...")
+        get_waybackurls(domains_to_scan)
+        CONSOLE.print("[cyan]Wayback scan done!")
         export_results()
         cleanup()
         CONSOLE.print("[cyan]Exported results")

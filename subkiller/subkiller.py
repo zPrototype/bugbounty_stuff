@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-d", "--domain", help="Enter a domain you want to scan for subdomains eg. tesla.com")
 group.add_argument("-f", "--file", help="Enter a file containing domains you want to scan for subdomains")
+parser.add_argument("-w", "--waybacks", action="store_true", help="Enable wayback scan. This might take a while.")
 parser.add_argument("-sp", "--spyse_key", help="Enter your spyse api key if you have one")
 parser.add_argument("-st", "--setrails_key", help="Enter your securitytrails api key if you have one")
 args = parser.parse_args()
@@ -55,7 +56,7 @@ def bootstrab_db():
             rawstr text,
             unique(domain,port)
         )""")
-    conn.execute("CREATE TABLE IF NOT EXISTS waybackurls (waybackurl text unique)")
+    conn.execute("CREATE TABLE IF NOT EXISTS waybackurls (ID INTEGER PRIMARY KEY AUTOINCREMENT, waybackurl text)")
     conn.commit()
 
 
@@ -179,7 +180,7 @@ def get_waybackurls(domain_list):
             result = handle.readlines()
         result = list(map(lambda r: (r.strip(),), result))
         
-        conn.executemany("INSERT OR IGNORE INTO waybackurls VALUES (?)", result)
+        conn.executemany("INSERT OR IGNORE INTO waybackurls (waybackurl) VALUES (?)", result)
         conn.commit()
 
 
@@ -208,10 +209,11 @@ def export_results():
         handle.write("\n".join(export_lines))
 
     # wayback.txt
-    results = conn.execute("SELECT waybackurl FROM waybackurls")
-    export_lines = map(lambda w: w[0], results)
-    with open("waybacks.txt", "w") as handle:
-        handle.write("\n".join(export_lines))
+    if args.waybacks:
+        results = conn.execute("SELECT DISTINCT waybackurl FROM waybackurls")
+        export_lines = map(lambda w: w[0], results)
+        with open("waybacks.txt", "w") as handle:
+            handle.write("\n".join(export_lines))
 
 
 def cleanup():
@@ -236,9 +238,10 @@ def main():
         status.update("[bold yellow]Probing subdomains...")
         do_probing()
         CONSOLE.print("[cyan]Probing done!")
-        status.update("[bold yellow]Searching for waybackurls...")
-        get_waybackurls(domains_to_scan)
-        CONSOLE.print("[cyan]Wayback scan done!")
+        if args.waybacks:
+            status.update("[bold yellow]Searching for waybackurls...")
+            get_waybackurls(domains_to_scan)
+            CONSOLE.print("[cyan]Wayback scan done!")
         export_results()
         cleanup()
         CONSOLE.print("[cyan]Exported results")

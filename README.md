@@ -1,3 +1,4 @@
+
 # Welcome to my BB repository!
 Hi! I go by the handle of zPrototype here on Github or 0xPrototype on Discord and Twitter. This repository is a collection of tools most of them are written by myself to help me and others who are doing bug bounties. Below is a list of the tools in this repo with a short explanation.
 
@@ -15,13 +16,22 @@ Subkiller requires a few tools to be pre installed on your system
 
 The usage is as follows:
 > `python3 subkiller.py -d <domain> OR -f  <file with domains>`
-> Optionally you can also specify your spyse api key with `-sp <spyse_key>` or your securitytrails key with `-st <securitytrails_key>`
+
+| Flag|Function|Required?|
+|:-------------:|:-------------:|:-----:|
+|-f|File containing domains|yes if -d not set|
+|-d|The domain you want to scan|yes if -f not set|
+|-w|Enables waybackurls|Optional|
+|-st|Your securitytrails api key|Optional|
+|-sp|Your spyse api key|Optional|
 
 Subkiller will output a sqlite file called `enumsubs.db` as well as four other files:
 - master.txt => All found and probed subdomains with the corresponding port
 - statuscodes.txt => Complete httpx output including redirect chains and site title
 - 403.txt => All subdomains that returned a 403 status code. Use this file with the next tool ;)
 - waybacks.txt => Containing all waybackurls for the provided target/s
+
+All files are already stripped from duplicate entries.
 
 ## Bypass forbidden
 This tool automates the process of trying various bypasses for 403 status codes. You will find two scripts inside this directory: `bypass.sh` and `wrapper.py`. The usage is very simple you need to supply three arguments:

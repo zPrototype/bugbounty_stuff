@@ -103,8 +103,11 @@ def do_findomain_scan(target):
     else:
         subprocess.run(findomain_cmd, shell=True, stdout=subprocess.DEVNULL)
 
-    with open(f"{TEMP_PATH}/{target}.fd", "r") as handle:
-        result = handle.readlines()
+    try:
+        with open(f"{TEMP_PATH}/{target}.fd", "r") as handle:
+            result = handle.readlines()
+    except:
+        return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()
@@ -113,9 +116,12 @@ def do_findomain_scan(target):
 def do_sublist3r_scan(target):
     sublist3r_cmd = f"sublist3r -d {target} -o {TEMP_PATH}/{target}.sl"
     subprocess.run(sublist3r_cmd, shell=True, stdout=subprocess.DEVNULL)
-
-    with open(f"{TEMP_PATH}/{target}.sl", "r") as handle:
-        result = handle.readlines()
+    
+    try:
+        with open(f"{TEMP_PATH}/{target}.sl", "r") as handle:
+            result = handle.readlines()
+    except:
+        return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()
@@ -125,8 +131,11 @@ def do_subfinder_scan(target):
     subfinder_cmd = f"subfinder -d {target} -o {TEMP_PATH}/{target}.sf"
     subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
 
-    with open(f"{TEMP_PATH}/{target}.sf", "r") as handle:
-        result = handle.readlines()
+    try:
+        with open(f"{TEMP_PATH}/{target}.sf", "r") as handle:
+            result = handle.readlines()
+    except:
+        return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()

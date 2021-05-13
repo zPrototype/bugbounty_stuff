@@ -164,18 +164,23 @@ def do_probing():
 
     with open(f"{TEMP_PATH}/httpx_subs.txt", "r") as handle:
         probed_subs = handle.readlines()
+
     httpx_re = re.compile(r"(.*?//)(.*):(\d*) \[(.*)] \[(.*)]")
     to_insert = []
     for sub in probed_subs:
         matched = httpx_re.match(sub)
-        to_insert.append((
-            matched.group(1),
-            matched.group(2),
-            int(matched.group(3)),
-            matched.group(4),
-            matched.group(5),
-            matched.group(0)
-            ))
+        try:
+            to_insert.append((
+                matched.group(1),
+                matched.group(2),
+                int(matched.group(3)),
+                matched.group(4),
+                matched.group(5),
+                matched.group(0)
+                ))
+        except:
+            CONSOLE.print(f"Error on the following sub: [red bold]{sub}")
+            continue
     conn.executemany("INSERT OR IGNORE INTO results VALUES (?, ?, ?, ?, ?, ?)", to_insert)
     conn.commit()
 

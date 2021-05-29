@@ -4,6 +4,10 @@ import argparse
 import sqlite3
 import os
 import shutil
+
+from dataclasses import field, dataclass
+from typing import Optional, List
+from dataclasses_json import config, dataclass_json, Undefined
 from rich.console import Console
 
 TEMP_PATH = "_tmp"
@@ -50,10 +54,11 @@ def bootstrab_db():
             """CREATE TABLE IF NOT EXISTS results (
             protocol text,
             domain text,
-            port integer,
+            port int,
+            statuscodechain text,
             statuscode text,
             title text,
-            rawstr text,
+            redirectURL text,
             unique(domain,port)
         )""")
     conn.execute("CREATE TABLE IF NOT EXISTS waybackurls (ID INTEGER PRIMARY KEY AUTOINCREMENT, waybackurl text)")
@@ -159,29 +164,36 @@ def do_probing():
 
     httpx_cmd = f"httpx -l {TEMP_PATH}/unprobed.out -silent -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; " \
             "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
-            f"-no-color -follow-redirects -title -websocket -o {TEMP_PATH}/httpx_subs.txt"
+            f"-no-color -follow-redirects -title -websocket -json -o {TEMP_PATH}/httpx_subs.txt"
     subprocess.run(httpx_cmd, shell=True, stdout=subprocess.DEVNULL)
 
-    with open(f"{TEMP_PATH}/httpx_subs.txt", "r") as handle:
-        probed_subs = handle.readlines()
+    @dataclass_json(undefined=Undefined.EXCLUDE)
+    @dataclass
+    class HttpxOutput:
+        scheme: Optional[str] = None
+        port: Optional[int] = None
+        url: Optional[str] = None
+        title: Optional[str] = None
+        statuscode: Optional[int] = field(metadata=config(field_name="status-code"), default=None)
+        final_dest: Optional[str] = field(metadata=config(field_name="final-url"), default=None)
+        statuscodes: Optional[List[int]] = field(metadata=config(field_name="chain-status-codes"), default=None)
 
-    httpx_re = re.compile(r"(.*?//)(.*):(\d*) \[(.*)] \[(.*)]")
-    to_insert = []
-    for sub in probed_subs:
-        matched = httpx_re.match(sub)
-        try:
-            to_insert.append((
-                matched.group(1),
-                matched.group(2),
-                int(matched.group(3)),
-                matched.group(4),
-                matched.group(5),
-                matched.group(0)
-                ))
-        except:
-            CONSOLE.print(f"Error on the following sub: [red bold]{sub}")
-            continue
-    conn.executemany("INSERT OR IGNORE INTO results VALUES (?, ?, ?, ?, ?, ?)", to_insert)
+        def get_db_tuple(self):
+            domain = re.match(r"https?://([^:]*)(:\d*)?", self.url).groups()[0]
+            return (
+                self.scheme,
+                domain,
+                self.port,
+                str(self.statuscodes),
+                self.statuscode,
+                self.title,
+                self.final_dest
+            )
+
+    with open(f"{TEMP_PATH}/httpx_subs.txt") as handle:
+        to_insert = [HttpxOutput.schema().loads(line).get_db_tuple() for line in handle.readlines()]
+    
+    conn.executemany("INSERT OR IGNORE INTO results VALUES (?, ?, ?, ?, ?, ?, ?)", to_insert)
     conn.commit()
 
 
@@ -203,14 +215,15 @@ def export_results():
     results = conn.execute("SELECT protocol, domain, port FROM results WHERE statuscode != 429")
     export_lines = []
     for res in results:
-        export_lines.append(f"{res[0]}{res[1]}:{res[2]}")
-
+        export_lines.append(f"{res[0]}://{res[1]}:{res[2]}")
     with open("master.txt", "w") as handle:
         handle.write("\n".join(export_lines))
 
     # statuscodes.txt
-    results = conn.execute("SELECT rawstr FROM results WHERE statuscode != 429")
-    export_lines = map(lambda s: s[0], results)
+    results = conn.execute("SELECT protocol, domain, port, statuscode, title, redirectURL FROM results WHERE statuscode != 429")
+    export_lines = []
+    for res in results:
+        export_lines.append(f"{res[0]}://{res[1]}:{res[2]} [{res[3]}] [{res[4]}] [{res[5] or ''}]")
     with open("statuscodes.txt", "w") as handle:
         handle.write("\n".join(export_lines))
 
@@ -218,7 +231,7 @@ def export_results():
     results = conn.execute("SELECT protocol, domain, port FROM results WHERE statuscode == 403")
     export_lines = []
     for res in results:
-        export_lines.append(f"{res[0]}{res[1]}:{res[2]}")
+        export_lines.append(f"{res[0]}://{res[1]}:{res[2]}")
     with open("403.txt", "w") as handle:
         handle.write("\n".join(export_lines))
 

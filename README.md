@@ -12,7 +12,7 @@ Subkiller requires a few tools to be pre installed on your system
 - Assetfinder => https://github.com/tomnomnom/assetfinder
 - GAU => https://github.com/lc/gau
 - Httpx => https://github.com/projectdiscovery/httpx
-> Note: It also requires the rich python library. **pip3 install rich**
+> Note: It also requires the rich python library and dataclasses-json. **pip3 install rich dataclasses-json**
 
 The usage is as follows:
 > `python3 subkiller.py -d <domain> OR -f  <file with domains>`

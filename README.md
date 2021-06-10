@@ -33,6 +33,8 @@ Subkiller will output a sqlite file called `enumsubs.db` as well as four other f
 
 All files are already stripped from duplicate entries.
 
+![subkiller in action](https://i.imgur.com/138OH4X.png)
+
 ## Bypass forbidden
 This tool automates the process of trying various bypasses for 403 status codes. You will find two scripts inside this directory: `bypass.sh` and `wrapper.py`. The usage is very simple you need to supply three arguments:
 > `python3 wrapper.py -s bypass.sh -u <file containing 403 urls> -o <output file name>`

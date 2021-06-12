@@ -51,16 +51,16 @@ def bootstrab_db():
     conn.execute("CREATE TABLE IF NOT EXISTS domains (domain text unique)")
     conn.execute("CREATE TABLE IF NOT EXISTS rawsubdomains (subdomain text unique)")
     conn.execute(
-            """CREATE TABLE IF NOT EXISTS results (
-            protocol text,
-            domain text,
-            port int,
-            statuscodechain text,
-            statuscode text,
-            title text,
-            redirectURL text,
-            unique(domain,port)
-        )""")
+        """CREATE TABLE IF NOT EXISTS results (
+        protocol text,
+        domain text,
+        port int,
+        statuscodechain text,
+        statuscode text,
+        title text,
+        redirectURL text,
+        unique(domain,port)
+    )""")
     conn.execute("CREATE TABLE IF NOT EXISTS waybackurls (ID INTEGER PRIMARY KEY AUTOINCREMENT, waybackurl text)")
     conn.commit()
 
@@ -121,7 +121,7 @@ def do_findomain_scan(target):
 def do_sublist3r_scan(target):
     sublist3r_cmd = f"sublist3r -d {target} -o {TEMP_PATH}/{target}.sl"
     subprocess.run(sublist3r_cmd, shell=True, stdout=subprocess.DEVNULL)
-    
+
     try:
         with open(f"{TEMP_PATH}/{target}.sl", "r") as handle:
             result = handle.readlines()
@@ -134,7 +134,8 @@ def do_sublist3r_scan(target):
 
 def do_subfinder_scan(target):
     subfinder_cmd = f"subfinder -d {target} -o {TEMP_PATH}/{target}.sf"
-    subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+    subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                   stdin=subprocess.DEVNULL)
 
     try:
         with open(f"{TEMP_PATH}/{target}.sf", "r") as handle:
@@ -163,8 +164,8 @@ def do_probing():
         handle.write('\n'.join(subdomains))
 
     httpx_cmd = f"httpx -l {TEMP_PATH}/unprobed.out -silent -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; " \
-            "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
-            f"-no-color -follow-redirects -title -websocket -json -o {TEMP_PATH}/httpx_subs.txt"
+                "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
+                f"-no-color -follow-redirects -title -websocket -json -o {TEMP_PATH}/httpx_subs.txt"
     subprocess.run(httpx_cmd, shell=True, stdout=subprocess.DEVNULL)
 
     @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -192,22 +193,31 @@ def do_probing():
 
     with open(f"{TEMP_PATH}/httpx_subs.txt") as handle:
         to_insert = [HttpxOutput.schema().loads(line).get_db_tuple() for line in handle.readlines()]
-    
+
     conn.executemany("INSERT OR IGNORE INTO results VALUES (?, ?, ?, ?, ?, ?, ?)", to_insert)
     conn.commit()
 
 
 def get_waybackurls(domain_list):
-    for target in domain_list: 
+    for target in domain_list:
         gau_cmd = f"""bash -c "echo '{target}' | gau -b ttf,woff,svg,png,jpg -o {TEMP_PATH}/{target}.gau" """
         subprocess.run(gau_cmd, shell=True, stdout=subprocess.DEVNULL)
-        
+
         with open(f"{TEMP_PATH}/{target}.gau", "r") as handle:
             result = handle.readlines()
         result = list(map(lambda r: (r.strip(),), result))
-        
+
         conn.executemany("INSERT OR IGNORE INTO waybackurls (waybackurl) VALUES (?)", result)
         conn.commit()
+
+
+def get_screenshot_urls():
+    urls_without_redirect = conn.execute(
+        "SELECT redirectURL FROM results WHERE redirectURL IS NOT NULL AND statuscode = 200 "
+        "UNION "
+        "SELECT protocol || '://' || domain || ':' || port FROM results WHERE redirectURL IS NULL AND statuscode = 200")
+    all_urls = list(map(lambda row: row[0], urls_without_redirect.fetchall()))
+    return all_urls
 
 
 def export_results():
@@ -220,7 +230,8 @@ def export_results():
         handle.write("\n".join(export_lines))
 
     # statuscodes.txt
-    results = conn.execute("SELECT protocol, domain, port, statuscode, title, redirectURL FROM results WHERE statuscode != 429")
+    results = conn.execute(
+        "SELECT protocol, domain, port, statuscode, title, redirectURL FROM results WHERE statuscode != 429")
     export_lines = []
     for res in results:
         export_lines.append(f"{res[0]}://{res[1]}:{res[2]} [{res[3]}] [{res[4]}] [{res[5] or ''}]")
@@ -241,6 +252,11 @@ def export_results():
         export_lines = map(lambda w: w[0], results)
         with open("waybacks.txt", "w") as handle:
             handle.write("\n".join(export_lines))
+
+    # screenshot_urls.txt
+    export_lines = get_screenshot_urls()
+    with open("screenshot_urls.txt", "w") as handle:
+        handle.write("\n".join(export_lines))
 
 
 def cleanup():
@@ -265,6 +281,9 @@ def main():
         status.update("[bold yellow]Probing subdomains...")
         do_probing()
         CONSOLE.print("[cyan]Probing done!")
+        status.update("[bold yellow]Preparing urls for screenshooting")
+        get_screenshot_urls()
+        CONSOLE.print("[cyan]Screenshot urls ready!")
         if args.waybacks:
             status.update("[bold yellow]Searching for waybackurls...")
             get_waybackurls(domains_to_scan)
@@ -279,4 +298,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

@@ -25,11 +25,12 @@ The usage is as follows:
 |-st|Your securitytrails api key|Optional|
 |-sp|Your spyse api key|Optional|
 
-Subkiller will output a sqlite file called `enumsubs.db` as well as four other files:
+Subkiller will output a sqlite file called `enumsubs.db` as well as five other files:
 - master.txt => All found and probed subdomains with the corresponding port
 - statuscodes.txt => Complete httpx output including redirect chains and site title
 - 403.txt => All subdomains that returned a 403 status code. Use this file with the next tool ;)
 - waybacks.txt => Containing all waybackurls for the provided target/s
+- screenshot_urls.txt => Containing all urls with a 200 status code to use for screenshotting
 
 All files are already stripped from duplicate entries.
 

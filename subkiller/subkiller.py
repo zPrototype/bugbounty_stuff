@@ -4,6 +4,7 @@ import argparse
 import sqlite3
 import os
 import shutil
+import requests
 
 from dataclasses import field, dataclass
 from typing import Optional, List
@@ -93,6 +94,23 @@ def start_scans(domain_list):
         do_sublist3r_scan(target)
         do_subfinder_scan(target)
         do_assetfinder_scan(target)
+        do_crtsh_scan(target)
+
+
+def do_crtsh_scan(target):
+    user_agent = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"}
+    url = f"https://crt.sh/?q={target}"
+    response = requests.get(url, headers=user_agent)
+    if not response.status_code == 200:
+        return
+    output = response.text
+    subdomain_regex = re.compile(f"[\w].*{target}")
+    spaces_regex = re.compile("(.*[\ ].*)")
+    result = re.findall(subdomain_regex, output.replace("TD>", "").replace("<BR>", "\n").replace("TD ", ""))
+    result = [re.sub(spaces_regex, "", x) for x in set(result)]
+    result = [elem for elem in result if elem.strip() != ""]
+    result = list(map(lambda r: (r.strip(),), result))
+    conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
 
 
 def do_findomain_scan(target):

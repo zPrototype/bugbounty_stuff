@@ -12,7 +12,7 @@ from typing import Optional, List
 from dataclasses_json import config, dataclass_json, Undefined
 from rich.console import Console
 
-TEMP_PATH = "_tmp"
+TEMP_PATH = os.path.join(os.path.dirname(__file__), "_tmp")
 CONSOLE = Console()
 
 parser = argparse.ArgumentParser()
@@ -29,7 +29,6 @@ args = parser.parse_args()
 os.makedirs(TEMP_PATH, exist_ok=True)
 os.makedirs(args.output_dir, exist_ok=True)
 conn = sqlite3.connect(os.path.join(args.output_dir, "enumsubs.db"))
-os.chdir(os.path.dirname(__file__))
 
 
 def print_banner():

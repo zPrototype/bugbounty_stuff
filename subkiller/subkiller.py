@@ -26,10 +26,10 @@ parser.add_argument("-sp", "--spyse_key", help="Enter your spyse api key if you 
 parser.add_argument("-st", "--setrails_key", help="Enter your securitytrails api key if you have one")
 args = parser.parse_args()
 
-conn = sqlite3.connect(os.path.join(args.output_dir, "enumsubs.db"))
-os.chdir(os.path.dirname(__file__))
 os.makedirs(TEMP_PATH, exist_ok=True)
 os.makedirs(args.output_dir, exist_ok=True)
+conn = sqlite3.connect(os.path.join(args.output_dir, "enumsubs.db"))
+os.chdir(os.path.dirname(__file__))
 
 
 def print_banner():

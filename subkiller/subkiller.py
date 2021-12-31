@@ -1,3 +1,4 @@
+import pathlib
 import re
 import subprocess
 import argparse
@@ -18,14 +19,17 @@ parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-d", "--domain", help="Enter a domain you want to scan for subdomains eg. tesla.com")
 group.add_argument("-f", "--file", help="Enter a file containing domains you want to scan for subdomains")
+parser.add_argument("-o", "--output-dir", help="Specify the output directory",
+                    type=pathlib.Path, default=os.getcwd())
 parser.add_argument("-w", "--waybacks", action="store_true", help="Enable wayback scan. This might take a while.")
 parser.add_argument("-sp", "--spyse_key", help="Enter your spyse api key if you have one")
 parser.add_argument("-st", "--setrails_key", help="Enter your securitytrails api key if you have one")
 args = parser.parse_args()
 
-conn = sqlite3.connect("enumsubs.db")
+conn = sqlite3.connect(os.path.join(args.output_dir, "enumsubs.db"))
 os.chdir(os.path.basename(__file__))
 os.makedirs(TEMP_PATH, exist_ok=True)
+os.makedirs(args.output_dir, exist_ok=True)
 
 
 def print_banner():
@@ -245,7 +249,7 @@ def export_results():
     export_lines = []
     for res in results:
         export_lines.append(f"{res[0]}://{res[1]}:{res[2]}")
-    with open("master.txt", "w") as handle:
+    with open(os.path.join(args.output_dir, "master.txt"), "w") as handle:
         handle.write("\n".join(export_lines))
 
     # statuscodes.txt
@@ -254,7 +258,7 @@ def export_results():
     export_lines = []
     for res in results:
         export_lines.append(f"{res[0]}://{res[1]}:{res[2]} [{res[3]}] [{res[4]}] [{res[5] or ''}]")
-    with open("statuscodes.txt", "w") as handle:
+    with open(os.path.join(args.output_dir, "statuscodes.txt"), "w") as handle:
         handle.write("\n".join(export_lines))
 
     # 403.txt
@@ -262,19 +266,19 @@ def export_results():
     export_lines = []
     for res in results:
         export_lines.append(f"{res[0]}://{res[1]}:{res[2]}")
-    with open("403.txt", "w") as handle:
+    with open(os.path.join(args.output_dir, "403.txt"), "w") as handle:
         handle.write("\n".join(export_lines))
 
     # wayback.txt
     if args.waybacks:
         results = conn.execute("SELECT DISTINCT waybackurl FROM waybackurls")
         export_lines = map(lambda w: w[0], results)
-        with open("waybacks.txt", "w") as handle:
+        with open(os.path.join(args.output_dir, "waybacks.txt"), "w") as handle:
             handle.write("\n".join(export_lines))
 
     # screenshot_urls.txt
     export_lines = get_screenshot_urls()
-    with open("screenshot_urls.txt", "w") as handle:
+    with open(os.path.join(args.output_dir, "screenshot_urls.txt"), "w") as handle:
         handle.write("\n".join(export_lines))
 
 

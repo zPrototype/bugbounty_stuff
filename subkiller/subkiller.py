@@ -24,6 +24,7 @@ parser.add_argument("-st", "--setrails_key", help="Enter your securitytrails api
 args = parser.parse_args()
 
 conn = sqlite3.connect("enumsubs.db")
+os.chdir(os.path.basename(__file__))
 os.makedirs(TEMP_PATH, exist_ok=True)
 
 

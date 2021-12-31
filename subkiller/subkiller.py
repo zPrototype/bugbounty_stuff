@@ -222,7 +222,7 @@ def do_probing():
 
 def get_waybackurls(domain_list):
     for target in domain_list:
-        gau_cmd = f"""bash -c "echo '{target}' | gau -b ttf,woff,svg,png,jpg -o {TEMP_PATH}/{target}.gau" """
+        gau_cmd = f"""bash -c "echo '{target}' | gau --blacklist ttf,woff,svg,png,jpg --o {TEMP_PATH}/{target}.gau" """
         subprocess.run(gau_cmd, shell=True, stdout=subprocess.DEVNULL)
 
         with open(f"{TEMP_PATH}/{target}.gau", "r") as handle:

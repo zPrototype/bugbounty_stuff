@@ -31,7 +31,7 @@ os.makedirs(TEMP_PATH, exist_ok=True)
 os.makedirs(args.output_dir, exist_ok=True)
 conn = sqlite3.connect(os.path.join(args.output_dir, "enumsubs.db"))
 
-logFormatter = logging.Formatter("%(asctime)-15s [%(levelname)8s] [%(threadName)s] - %(message)s")
+logFormatter = logging.Formatter("%(asctime)-15s [%(levelname)8s] [%(threadName)s] [%(name)-12s] - %(message)s")
 LOG = logging.getLogger()
 LOG.setLevel(logging.DEBUG)
 
@@ -39,6 +39,7 @@ fileHandler = logging.FileHandler(os.path.join(args.output_dir, "subkiller.log")
 fileHandler.setFormatter(logFormatter)
 LOG.addHandler(fileHandler)
 
+LOG.info(f"Starting script run with args {args}")
 
 def print_banner():
     print("""
@@ -81,7 +82,7 @@ def bootstrab_db():
 
 
 def insert_domains(domain_list):
-    domain_list = map(lambda d: (d,), domain_list)
+    domain_list = list(map(lambda d: (d,), domain_list))
     conn.executemany("INSERT OR IGNORE INTO domains VALUES (?)", domain_list)
     conn.commit()
     LOG.info(f"starter domains inserted: {domain_list}")
@@ -114,19 +115,25 @@ def start_scans(domain_list):
 
 
 def do_crtsh_scan(target):
+    LOG.info("Start crtsh scan")
     user_agent = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"}
     url = f"https://crt.sh/?q={target}"
     response = requests.get(url, headers=user_agent)
     if not response.status_code == 200:
+        LOG.warning("Failed to pull results from crt.sh")
         return
     output = response.text
+    LOG.info(f"Pulled results from crt.sh with content length: {len(output)}")
     subdomain_regex = re.compile(f"[\w].*{target}")
     spaces_regex = re.compile("(.*[\ ].*)")
     result = re.findall(subdomain_regex, output.replace("TD>", "").replace("<BR>", "\n").replace("TD ", ""))
     result = [re.sub(spaces_regex, "", x) for x in set(result)]
     result = [elem for elem in result if elem.strip() != ""]
     result = list(map(lambda r: (r.strip(),), result))
+    LOG.info(f"Completed crt.sh with {len(result)} results")
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
+    conn.commit()
+    LOG.info("Added results of crt.sh to database")
 
 
 def do_findomain_scan(target):
@@ -150,7 +157,7 @@ def do_findomain_scan(target):
             result = handle.readlines()
         LOG.info(f"Read result of finddomain with {len(result)} lines")
     except Exception:
-        LOG.error("Reading resultfile failed")
+        LOG.warning("Reading resultfile failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
@@ -169,7 +176,7 @@ def do_sublist3r_scan(target):
             result = handle.readlines()
         LOG.info(f"Read result of sublist3r with {len(result)} lines")
     except Exception:
-        LOG.error("Reading resultfile failed")
+        LOG.warning("Reading resultfile failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
@@ -189,7 +196,7 @@ def do_subfinder_scan(target):
             result = handle.readlines()
         LOG.info(f"Read result of subfinder with {len(result)} lines")
     except Exception:
-        LOG.error("Reading resultfile failed")
+        LOG.warning("Reading resultfile failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)

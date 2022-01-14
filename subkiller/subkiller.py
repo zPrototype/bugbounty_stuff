@@ -6,6 +6,7 @@ import sqlite3
 import os
 import shutil
 import requests
+import logging
 
 from dataclasses import field, dataclass
 from typing import Optional, List
@@ -29,6 +30,14 @@ args = parser.parse_args()
 os.makedirs(TEMP_PATH, exist_ok=True)
 os.makedirs(args.output_dir, exist_ok=True)
 conn = sqlite3.connect(os.path.join(args.output_dir, "enumsubs.db"))
+
+logFormatter = logging.Formatter("%(asctime)-15s [%(levelname)8s] [%(threadName)s] - %(message)s")
+LOG = logging.getLogger()
+LOG.setLevel(logging.DEBUG)
+
+fileHandler = logging.FileHandler(os.path.join(args.output_dir, "subkiller.log"))
+fileHandler.setFormatter(logFormatter)
+LOG.addHandler(fileHandler)
 
 
 def print_banner():
@@ -68,12 +77,14 @@ def bootstrab_db():
     )""")
     conn.execute("CREATE TABLE IF NOT EXISTS waybackurls (ID INTEGER PRIMARY KEY AUTOINCREMENT, waybackurl text)")
     conn.commit()
+    LOG.info("Database bootstrapped")
 
 
 def insert_domains(domain_list):
     domain_list = map(lambda d: (d,), domain_list)
     conn.executemany("INSERT OR IGNORE INTO domains VALUES (?)", domain_list)
     conn.commit()
+    LOG.info(f"starter domains inserted: {domain_list}")
 
 
 def process_input():
@@ -93,6 +104,7 @@ def get_domains_to_scan():
 
 
 def start_scans(domain_list):
+    LOG.info("Start scans")
     for target in domain_list:
         do_findomain_scan(target)
         do_sublist3r_scan(target)
@@ -118,6 +130,7 @@ def do_crtsh_scan(target):
 
 
 def do_findomain_scan(target):
+    LOG.info("Start finddomain scan")
     env = {}
     if args.spyse_key:
         env["findomain_spyse_token"] = args.spyse_key
@@ -126,57 +139,75 @@ def do_findomain_scan(target):
 
     findomain_cmd = f"findomain -t {target} -u {TEMP_PATH}/{target}.fd"
     if env:
-        subprocess.run(findomain_cmd, env=env, shell=True, stdout=subprocess.DEVNULL)
+        proc = subprocess.run(findomain_cmd, env=env, shell=True, stdout=subprocess.DEVNULL)
     else:
-        subprocess.run(findomain_cmd, shell=True, stdout=subprocess.DEVNULL)
+        proc = subprocess.run(findomain_cmd, shell=True, stdout=subprocess.DEVNULL)
+
+    LOG.info(f"External process completed: {proc}")
 
     try:
         with open(f"{TEMP_PATH}/{target}.fd", "r") as handle:
             result = handle.readlines()
-    except:
+        LOG.info(f"Read result of finddomain with {len(result)} lines")
+    except Exception:
+        LOG.error("Reading resultfile failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()
+    LOG.info("Added results of finddomain to database")
 
 
 def do_sublist3r_scan(target):
+    LOG.info("Start sublist3r scan")
     sublist3r_cmd = f"sublist3r -d {target} -o {TEMP_PATH}/{target}.sl"
-    subprocess.run(sublist3r_cmd, shell=True, stdout=subprocess.DEVNULL)
+    proc = subprocess.run(sublist3r_cmd, shell=True, stdout=subprocess.DEVNULL)
+    LOG.info(f"External process completed: {proc}")
 
     try:
         with open(f"{TEMP_PATH}/{target}.sl", "r") as handle:
             result = handle.readlines()
-    except:
+        LOG.info(f"Read result of sublist3r with {len(result)} lines")
+    except Exception:
+        LOG.error("Reading resultfile failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()
+    LOG.info("Added results of sublist3r to database")
 
 
 def do_subfinder_scan(target):
+    LOG.info("Start subfinder scan")
     subfinder_cmd = f"subfinder -d {target} -o {TEMP_PATH}/{target}.sf"
-    subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                   stdin=subprocess.DEVNULL)
+    proc = subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                          stdin=subprocess.DEVNULL)
+    LOG.info(f"External process completed: {proc}")
 
     try:
         with open(f"{TEMP_PATH}/{target}.sf", "r") as handle:
             result = handle.readlines()
-    except:
+        LOG.info(f"Read result of subfinder with {len(result)} lines")
+    except Exception:
+        LOG.error("Reading resultfile failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()
+    LOG.info("Added results of subfinder to database")
 
 
 def do_assetfinder_scan(target):
+    LOG.info("Start assetfinder scan")
     assetfinder_cmd = f"assetfinder --subs-only {target}"
     assetfinder_output = subprocess.check_output(assetfinder_cmd, shell=True, stdin=subprocess.DEVNULL)
     assetfinder_output = assetfinder_output.decode().splitlines()
     assetfinder_output = list(map(lambda r: (r.strip(),), assetfinder_output))
+    LOG.info(f"Assetfinder returned: {len(assetfinder_output)} results")
 
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", assetfinder_output)
     conn.commit()
+    LOG.info("Added results of assetfinder to database")
 
 
 def do_probing():

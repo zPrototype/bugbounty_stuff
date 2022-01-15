@@ -42,10 +42,10 @@ def get_logger(logfile_dir: str):
 
 
 ARGS = get_arguments()
-LOG = get_logger(ARGS.output_dir)
 
 os.makedirs(TEMP_PATH, exist_ok=True)
 os.makedirs(ARGS.output_dir, exist_ok=True)
+LOG = get_logger(ARGS.output_dir)
 conn = sqlite3.connect(os.path.join(ARGS.output_dir, "enumsubs.db"))
 
 LOG.info(f"Starting script run with args {ARGS}")

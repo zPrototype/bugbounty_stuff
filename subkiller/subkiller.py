@@ -129,12 +129,17 @@ def do_crtsh_scan(target):
     LOG.info("Start crtsh scan")
     user_agent = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"}
     url = f"https://crt.sh/?q={target}"
-    response = requests.get(url, headers=user_agent)
-    if not response.status_code == 200:
-        LOG.warning("Failed to pull results from crt.sh")
+    try:
+        response = requests.get(url, headers=user_agent)
+        if not response.status_code == 200:
+            LOG.warning("Failed to pull results from crt.sh. Status code is != 200")
+            return
+        output = response.text
+        LOG.info(f"Pulled results from crt.sh with content length: {len(output)}")
+    except:
+        LOG.warning("Failed to make/complete request to crt.sh. Python requests error.")
         return
-    output = response.text
-    LOG.info(f"Pulled results from crt.sh with content length: {len(output)}")
+        
     target = target.replace(".", "\\.")
     subdomain_regex = re.compile(r"[\w][\w\.]*" + target)
     result = re.findall(subdomain_regex, output)

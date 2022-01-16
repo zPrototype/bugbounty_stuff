@@ -130,7 +130,7 @@ def do_crtsh_scan(target):
     request_headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"}
     url = f"https://crt.sh/?q={target}"
     try:
-        response = requests.get(url, headers=request_headers)
+        response = requests.get(url, headers=request_headers, verify=False)
         if not response.status_code == 200:
             LOG.warning(f"Failed to pull results from crt.sh. Status code is {response.status_code}")
             return

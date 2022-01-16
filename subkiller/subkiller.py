@@ -127,26 +127,24 @@ def start_scans(domain_list):
 
 def do_crtsh_scan(target):
     LOG.info("Start crtsh scan")
-    user_agent = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"}
+    request_headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"}
     url = f"https://crt.sh/?q={target}"
     try:
-        response = requests.get(url, headers=user_agent)
+        response = requests.get(url, headers=request_headers)
         if not response.status_code == 200:
-            LOG.warning("Failed to pull results from crt.sh. Status code is != 200")
+            LOG.warning(f"Failed to pull results from crt.sh. Status code is {response.status_code}")
             return
         output = response.text
-        LOG.info(f"Pulled results from crt.sh with content length: {len(output)}")
-    except:
-        LOG.warning("Failed to make/complete request to crt.sh. Python requests error.")
+        LOG.info(f"Pulled results from crt.sh with content length {len(output)}")
+    except Exception as e:
+        LOG.error(f"Exception occurred during request to crt.sh. Error is {e}")
         return
         
     target = target.replace(".", "\\.")
     subdomain_regex = re.compile(r"[\w][\w\.]*" + target)
     result = re.findall(subdomain_regex, output)
-    result = list(set(result))
-    LOG.info(f"Matched {len(result)} unique results for crt.sh")
-    result = list(map(lambda r: (r.strip(),), result))
-    LOG.info(f"Completed crt.sh with {len(result)} results")
+    result = list(set(map(lambda r: (r.strip(),), result)))
+    LOG.info(f"Completed crt.sh with {len(result)} unique results")
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()
     LOG.info("Added results of crt.sh to database")

@@ -7,12 +7,14 @@ import os
 import shutil
 import requests
 import logging
+import urllib3
 
 from dataclasses import field, dataclass
 from typing import Optional, List
 from dataclasses_json import config, dataclass_json, Undefined
 from rich.console import Console
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 TEMP_PATH = os.path.join(os.path.dirname(__file__), "_tmp")
 CONSOLE = Console()
 
@@ -139,7 +141,7 @@ def do_crtsh_scan(target):
     except Exception as e:
         LOG.error(f"Exception occurred during request to crt.sh. Error is {e}")
         return
-        
+
     target = target.replace(".", "\\.")
     subdomain_regex = re.compile(r"[\w][\w\.]*" + target)
     result = re.findall(subdomain_regex, output)

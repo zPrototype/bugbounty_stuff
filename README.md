@@ -6,7 +6,7 @@ Hi! I go by the handle of zPrototype here on Github or 0xPrototype on Discord an
 Subkiller is basically a wrapper around a few popular tools together with a sqlite database. The main goal of this tool is to make the asset discovery process faster and easier for you. This tool was developed with the help of my good friend iCaotix who I can't thank enough for always putting up with my weird ideas and being there to help me debug or implement stuff that's just way over my head!
 
 Subkiller requires a few tools to be pre installed on your system
-- Sublist3r => https://github.com/aboul3la/Sublist3r
+- Amass => https://github.com/OWASP/Amass
 - Subfinder => https://github.com/projectdiscovery/subfinder
 - Findomain => https://github.com/Findomain/Findomain
 - Assetfinder => https://github.com/tomnomnom/assetfinder

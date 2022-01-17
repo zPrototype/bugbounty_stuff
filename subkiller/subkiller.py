@@ -66,7 +66,7 @@ def print_banner():
 
 
 def check_for_tools():
-    required_tools = ["findomain", "subfinder", "sublist3r", "assetfinder", "gau", "httpx"]
+    required_tools = ["findomain", "subfinder", "amass", "assetfinder", "gau", "httpx"]
     for tool in required_tools:
         check_tool_flag = shutil.which(tool)
         if check_tool_flag is None:
@@ -122,7 +122,7 @@ def start_scans(domain_list):
     for target in domain_list:
         do_crtsh_scan(target)
         do_findomain_scan(target)
-        do_sublist3r_scan(target)
+        do_amass_scan(target)
         do_subfinder_scan(target)
         do_assetfinder_scan(target)
 
@@ -181,23 +181,23 @@ def do_findomain_scan(target):
     LOG.info("Added results of finddomain to database")
 
 
-def do_sublist3r_scan(target):
-    LOG.info("Start sublist3r scan")
-    sublist3r_cmd = f"sublist3r -d {target} -o {TEMP_PATH}/{target}.sl"
-    proc = subprocess.run(sublist3r_cmd, shell=True, stdout=subprocess.DEVNULL)
+def do_amass_scan(target):
+    LOG.info("Start amass scan")
+    amass_cmd = f"amass enum -passive -norecursive -nolocaldb -noalts -nocolor -d {target} -o {TEMP_PATH}/{target}.am"
+    proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
 
     try:
-        with open(f"{TEMP_PATH}/{target}.sl", "r") as handle:
+        with open(f"{TEMP_PATH}/{target}.am", "r") as handle:
             result = handle.readlines()
-        LOG.info(f"Read result of sublist3r with {len(result)} lines")
+        LOG.info(f"Read result of amass with {len(result)} lines")
     except FileNotFoundError:
         LOG.warning("Reading resultfile failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
     conn.commit()
-    LOG.info("Added results of sublist3r to database")
+    LOG.info("Added results of amass to database")
 
 
 def do_subfinder_scan(target):

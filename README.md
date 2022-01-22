@@ -3,7 +3,7 @@
 Hi! I go by the handle of zPrototype here on Github or 0xPrototype on Discord and Twitter. This repository is a collection of tools most of them are written by myself to help me and others who are doing bug bounties. Below is a list of the tools in this repo with a short explanation.
 
 ## Subkiller
-> I would recommend using the docker version (linux/amd64 and linux/arm/v8)
+> I would recommend using the docker version (linux/amd64 and linux/arm/v8)  
 > => https://hub.docker.com/r/0xprototype/subkiller
 
 Subkiller is basically a wrapper around a few popular tools together with a sqlite database. The main goal of this tool is to make the asset discovery process faster and easier for you. This tool was developed with the help of my good friend iCaotix who I can't thank enough for always putting up with my weird ideas and being there to help me debug or implement stuff that's just way over my head!

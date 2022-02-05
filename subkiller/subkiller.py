@@ -339,7 +339,7 @@ def export_results():
     # wayback.txt
     if ARGS.waybacks:
         results = conn.execute("SELECT DISTINCT waybackurl FROM waybackurls")
-        export_lines = map(lambda w: w[0], results)
+        export_lines = list(map(lambda w: w[0], results))
         with open(os.path.join(ARGS.output_dir, "waybacks.txt"), "w") as handle:
             handle.write("\n".join(export_lines))
         LOG.info(f"Wrote waybacks.txt file with {len(export_lines)} lines")

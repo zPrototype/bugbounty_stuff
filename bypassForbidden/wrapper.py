@@ -4,7 +4,6 @@ import re
 import json
 from concurrent.futures import ThreadPoolExecutor
 from rich.console import Console
-from rich.progress import track
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--threads", "-t", help="Enter the number of threads you want to use", default=5, type=int)
@@ -35,7 +34,7 @@ def execute_script(forbidden_url, script):
 
 CONSOLE.print("[bold cyan]Trying bypasses...")
 with ThreadPoolExecutor(max_workers=args.threads) as executor:
-    for url in track(urls, total=len(urls), description="Working..."):
+    for url in urls:
         results.append((url, executor.submit(execute_script, url, args.script)))
 
 results = map(lambda r: (r[0], r[1].result()), results)

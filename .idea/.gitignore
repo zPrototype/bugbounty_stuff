@@ -5,4 +5,5 @@
 /dataSources/
 /dataSources.local.xml
 # Editor-based HTTP Client requests
+.DS_Store
 /httpRequests/

@@ -9,6 +9,7 @@ import requests
 import logging
 import urllib3
 
+from urllib3 import exceptions
 from dataclasses import field, dataclass
 from typing import Optional, List
 from dataclasses_json import config, dataclass_json, Undefined
@@ -24,8 +25,7 @@ def get_arguments():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-d", "--domain", help="Enter a domain you want to scan for subdomains eg. tesla.com")
     group.add_argument("-f", "--file", help="Enter a file containing domains you want to scan for subdomains")
-    parser.add_argument("-o", "--output-dir", help="Specify the output directory",
-                        type=pathlib.Path, default=os.getcwd())
+    parser.add_argument("-o", "--output-dir", help="Specify the output directory", type=pathlib.Path, default=os.getcwd())
     parser.add_argument("-w", "--waybacks", action="store_true", help="Enable wayback scan. This might take a while.")
     parser.add_argument("-sp", "--spyse_key", help="Enter your spyse api key if you have one")
     parser.add_argument("-st", "--setrails_key", help="Enter your securitytrails api key if you have one")
@@ -75,7 +75,7 @@ def check_for_tools():
             exit(1)
 
 
-def bootstrab_db():
+def bootstrap_db():
     conn.execute("CREATE TABLE IF NOT EXISTS domains (domain text unique)")
     conn.execute("CREATE TABLE IF NOT EXISTS rawsubdomains (subdomain text unique)")
     conn.execute(
@@ -173,7 +173,7 @@ def do_findomain_scan(target):
             result = handle.readlines()
         LOG.info(f"Read result of finddomain with {len(result)} lines")
     except FileNotFoundError:
-        LOG.warning("Reading resultfile failed")
+        LOG.warning("Reading result file failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
@@ -192,7 +192,7 @@ def do_amass_scan(target):
             result = handle.readlines()
         LOG.info(f"Read result of amass with {len(result)} lines")
     except FileNotFoundError:
-        LOG.warning("Reading resultfile failed")
+        LOG.warning("Reading result file failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
@@ -212,7 +212,7 @@ def do_subfinder_scan(target):
             result = handle.readlines()
         LOG.info(f"Read result of subfinder with {len(result)} lines")
     except FileNotFoundError:
-        LOG.warning("Reading resultfile failed")
+        LOG.warning("Reading result file failed")
         return
     result = list(map(lambda r: (r.strip(),), result))
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
@@ -239,7 +239,7 @@ def do_probing():
     subdomains = map(lambda s: s[0], subdomains)
     with open(f"{TEMP_PATH}/unprobed.out", "w") as handle:
         handle.write('\n'.join(subdomains))
-    LOG.info(f"Wrote unprobed domains into temp file")
+    LOG.info(f"Wrote {len(list(subdomains))} unprobed domains into temp file")
     httpx_cmd = f"httpx -l {TEMP_PATH}/unprobed.out -silent -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; " \
                 "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
                 f"-no-color -follow-redirects -title -websocket -json -o {TEMP_PATH}/httpx_subs.txt"
@@ -365,7 +365,7 @@ def main():
     with CONSOLE.status("") as status:
         check_for_tools()
         CONSOLE.print("[cyan]Tool check done!")
-        bootstrab_db()
+        bootstrap_db()
         CONSOLE.print("[cyan]Bootstrapped database!")
         requested_domains = process_input()
         insert_domains(requested_domains)
@@ -376,7 +376,7 @@ def main():
         status.update("[bold yellow]Probing subdomains...")
         do_probing()
         CONSOLE.print("[cyan]Probing done!")
-        status.update("[bold yellow]Preparing urls for screenshooting")
+        status.update("[bold yellow]Preparing urls for screenshotting")
         get_screenshot_urls()
         CONSOLE.print("[cyan]Screenshot urls ready!")
         if ARGS.waybacks:

@@ -183,7 +183,7 @@ def do_findomain_scan(target):
 
 def do_amass_scan(target):
     LOG.info("Start amass scan")
-    amass_cmd = f"amass enum -passive -norecursive -nolocaldb -noalts -nocolor -d {target} -o {TEMP_PATH}/{target}.am"
+    amass_cmd = f"amass enum -passive -norecursive -nolocaldb -noalts -nocolor -silent -d {target} -o {TEMP_PATH}/{target}.am"
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
 
@@ -236,10 +236,10 @@ def do_assetfinder_scan(target):
 def do_probing():
     LOG.info("Start probing for live subdomains")
     subdomains = conn.execute("SELECT * FROM rawsubdomains")
-    subdomains = map(lambda s: s[0], subdomains)
+    subdomains = list(map(lambda s: s[0], subdomains))
     with open(f"{TEMP_PATH}/unprobed.out", "w") as handle:
         handle.write('\n'.join(subdomains))
-    LOG.info(f"Wrote {len(list(subdomains))} unprobed domains into temp file")
+    LOG.info(f"Wrote {len(subdomains)} unprobed domains into temp file")
     httpx_cmd = f"httpx -l {TEMP_PATH}/unprobed.out -silent -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; " \
                 "rv:55.0) Gecko/20100101 Firefox/55.0' -ports 80,8080,8081,8443,443,7001,3000 -status-code " \
                 f"-no-color -follow-redirects -title -websocket -json -o {TEMP_PATH}/httpx_subs.txt"

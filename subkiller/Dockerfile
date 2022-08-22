@@ -13,7 +13,7 @@ RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 
     go install github.com/lc/gau/v2/cmd/gau@latest && \
     go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
     go install -v github.com/OWASP/Amass/v3/...@master && \
-    go get -u github.com/tomnomnom/assetfinder
+    go install github.com/tomnomnom/assetfinder@latest
 
 # Build prod image
 FROM python:3.9.9-slim-bullseye

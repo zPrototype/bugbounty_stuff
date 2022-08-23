@@ -117,7 +117,7 @@ def get_domains_to_scan() -> list[str]:
     return list(domains)
 
 
-def start_scans(domain_list):
+def start_scans(domain_list: list[str]):
     LOG.info("Start scans")
     for target in domain_list:
         do_crtsh_scan(target)

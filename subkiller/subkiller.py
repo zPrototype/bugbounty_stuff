@@ -94,14 +94,14 @@ def bootstrap_db():
     LOG.info("Database bootstrapped")
 
 
-def insert_domains(domain_list):
+def insert_domains(domain_list: list[str]):
     domain_list = list(map(lambda d: (d,), domain_list))
     conn.executemany("INSERT OR IGNORE INTO domains VALUES (?)", domain_list)
     conn.commit()
     LOG.info(f"Starter domains inserted: {domain_list}")
 
 
-def process_input():
+def process_input() -> list[str]:
     if ARGS.file:
         with open(ARGS.file, "r") as handle:
             domains = handle.readlines()
@@ -111,7 +111,7 @@ def process_input():
     return domains
 
 
-def get_domains_to_scan():
+def get_domains_to_scan() -> list[str]:
     domains = conn.execute("SELECT * FROM domains")
     domains = map(lambda d: d[0], domains)
     return list(domains)
@@ -127,7 +127,7 @@ def start_scans(domain_list):
         do_assetfinder_scan(target)
 
 
-def do_crtsh_scan(target):
+def do_crtsh_scan(target: str):
     LOG.info("Start crtsh scan")
     request_headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0"}
     url = f"https://crt.sh/?q={target}"
@@ -152,7 +152,7 @@ def do_crtsh_scan(target):
     LOG.info("Added results of crt.sh to database")
 
 
-def do_findomain_scan(target):
+def do_findomain_scan(target: str):
     LOG.info("Start finddomain scan")
     env = {}
     if ARGS.spyse_key:
@@ -181,7 +181,7 @@ def do_findomain_scan(target):
     LOG.info("Added results of finddomain to database")
 
 
-def do_amass_scan(target):
+def do_amass_scan(target: str):
     LOG.info("Start amass scan")
     amass_cmd = f"amass enum -passive -norecursive -nolocaldb -noalts -nocolor -silent -d {target} -o {TEMP_PATH}/{target}.am"
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
@@ -200,7 +200,7 @@ def do_amass_scan(target):
     LOG.info("Added results of amass to database")
 
 
-def do_subfinder_scan(target):
+def do_subfinder_scan(target: str):
     LOG.info("Start subfinder scan")
     subfinder_cmd = f"subfinder -d {target} -o {TEMP_PATH}/{target}.sf"
     proc = subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -220,7 +220,7 @@ def do_subfinder_scan(target):
     LOG.info("Added results of subfinder to database")
 
 
-def do_assetfinder_scan(target):
+def do_assetfinder_scan(target: str):
     LOG.info("Start assetfinder scan")
     assetfinder_cmd = f"assetfinder --subs-only {target}"
     assetfinder_output = subprocess.check_output(assetfinder_cmd, shell=True, stdin=subprocess.DEVNULL)
@@ -278,7 +278,7 @@ def do_probing():
     LOG.info("Added results of httpx to database")
 
 
-def get_waybackurls(domain_list):
+def get_waybackurls(domain_list: list[str]):
     LOG.info("Start searching for waybackurls")
     for target in domain_list:
         gau_cmd = f"""bash -c "echo '{target}' | gau --blacklist ttf,woff,svg,png,jpg --o {TEMP_PATH}/{target}.gau" """
@@ -295,7 +295,7 @@ def get_waybackurls(domain_list):
         LOG.info("Added results of gau to database")
 
 
-def get_screenshot_urls():
+def get_screenshot_urls() -> list[str]:
     LOG.info("Start preparing urls for screenshotting")
     urls_without_redirect = conn.execute(
         "SELECT redirectURL FROM results WHERE redirectURL IS NOT NULL AND statuscode = 200 "

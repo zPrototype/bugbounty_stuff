@@ -162,9 +162,9 @@ def do_findomain_scan(target: str):
 
     findomain_cmd = f"findomain -t {target} -u {TEMP_PATH}/{target}.fd"
     if env:
-        proc = subprocess.run(findomain_cmd, env=env, shell=True, stdout=subprocess.DEVNULL)
+        proc = subprocess.run(findomain_cmd, env=env, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
-        proc = subprocess.run(findomain_cmd, shell=True, stdout=subprocess.DEVNULL)
+        proc = subprocess.run(findomain_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     LOG.info(f"External process completed: {proc}")
 

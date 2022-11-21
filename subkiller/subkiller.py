@@ -253,9 +253,9 @@ def do_probing():
         port: Optional[int] = None
         url: Optional[str] = None
         title: Optional[str] = None
-        statuscode: Optional[int] = field(metadata=config(field_name="status-code"), default=None)
-        final_dest: Optional[str] = field(metadata=config(field_name="final-url"), default=None)
-        statuscodes: Optional[List[int]] = field(metadata=config(field_name="chain-status-codes"), default=None)
+        statuscode: Optional[int] = field(metadata=config(field_name="status_code"), default=None)
+        final_dest: Optional[str] = field(metadata=config(field_name="final_url"), default=None)
+        statuscodes: Optional[List[int]] = field(metadata=config(field_name="chain_status_codes"), default=None)
 
         def get_db_tuple(self):
             domain = re.match(r"https?://([^:]*)(:\d*)?", self.url).groups()[0]

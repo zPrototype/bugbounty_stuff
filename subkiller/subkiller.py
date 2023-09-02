@@ -187,7 +187,7 @@ def do_amass_scan(target: str):
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
     
-    amass_db_cmd = f"./amass db -names -d {target}"
+    amass_db_cmd = f"amass db -names -d {target}"
     amass_results = subprocess.check_output(amass_db_cmd, shell=True, stdin=subprocess.DEVNULL)
     if "No names were discovered" in amass_results:
         LOG.warning("Amass failed to get subdomains. Check your code!")

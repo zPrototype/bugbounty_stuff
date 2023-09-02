@@ -1,5 +1,5 @@
 # Setup rust build container
-FROM rust:bullseye AS rust_builder
+FROM rust:1-buster AS rust_builder
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y make perl git && \
@@ -8,7 +8,7 @@ RUN apt-get update && \
     cargo build --release
 
 # Setup golang builder container
-FROM golang:1-buster AS go_builder
+FROM golang:bullseye AS go_builder
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest && \
     go install github.com/lc/gau/v2/cmd/gau@latest && \
     go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \

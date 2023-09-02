@@ -183,19 +183,19 @@ def do_findomain_scan(target: str):
 
 def do_amass_scan(target: str):
     LOG.info("Start amass scan")
-    amass_cmd = f"amass enum -passive -norecursive -nocolor -silent -d {target} -o {TEMP_PATH}/{target}.am"
+    amass_cmd = f"amass enum -passive -norecursive -nocolor -silent -d {target}"
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
-
-    try:
-        with open(f"{TEMP_PATH}/{target}.am", "r") as handle:
-            result = handle.readlines()
-        LOG.info(f"Read result of amass with {len(result)} lines")
-    except FileNotFoundError:
-        LOG.warning("Reading result file failed")
+    
+    amass_db_cmd = f"./amass db -names -d {target}"
+    amass_results = subprocess.check_output(amass_db_cmd, shell=True, stdin=subprocess.DEVNULL)
+    if "No names were discovered" in amass_results:
+        LOG.warning("Amass failed to get subdomains. Check your code!")
         return
-    result = list(map(lambda r: (r.strip(),), result))
-    conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", result)
+    amass_results = amass_results.decode().splitlines()
+    amass_results = list(map(lambda r: (r.strip(),), amass_results))
+    
+    conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", amass_results)
     conn.commit()
     LOG.info("Added results of amass to database")
 

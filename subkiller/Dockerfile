@@ -12,7 +12,7 @@ FROM golang:1-buster AS go_builder
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest && \
     go install github.com/lc/gau/v2/cmd/gau@latest && \
     go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
-    go install -v github.com/OWASP/Amass/v3/...@master && \
+    go install -v github.com/owasp-amass/amass/v4/...@master && \
     go install github.com/tomnomnom/assetfinder@latest
 
 # Build prod image

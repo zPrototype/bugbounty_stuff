@@ -183,7 +183,7 @@ def do_findomain_scan(target: str):
 
 def do_amass_scan(target: str):
     LOG.info("Start amass scan")
-    amass_cmd = f"amass enum -passive -norecursive -nolocaldb -noalts -nocolor -silent -d {target} -o {TEMP_PATH}/{target}.am"
+    amass_cmd = f"amass enum -passive -norecursive -nocolor -silent -d {target} -o {TEMP_PATH}/{target}.am"
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
 
@@ -202,7 +202,7 @@ def do_amass_scan(target: str):
 
 def do_subfinder_scan(target: str):
     LOG.info("Start subfinder scan")
-    subfinder_cmd = f"subfinder -d {target} -o {TEMP_PATH}/{target}.sf"
+    subfinder_cmd = f"subfinder -recursive -d {target} -o {TEMP_PATH}/{target}.sf"
     proc = subprocess.run(subfinder_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                           stdin=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")

@@ -183,7 +183,7 @@ def do_findomain_scan(target: str):
 
 def do_amass_scan(target: str):
     LOG.info("Start amass scan")
-    amass_cmd = f"amass enum -passive -norecursive -nocolor -silent -d {target}"
+    amass_cmd = f"amass enum -passive -nocolor -silent -d {target}"
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
     

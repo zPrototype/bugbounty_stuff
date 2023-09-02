@@ -194,7 +194,8 @@ def do_amass_scan(target: str):
         LOG.warning("Amass failed to get subdomains. Check your code!")
         return
     amass_results = list(map(lambda r: (r.strip(),), amass_results))
-    
+    LOG.info(f"Read result of amass with {len(amass_results)} lines")
+
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", amass_results)
     conn.commit()
     LOG.info("Added results of amass to database")

@@ -189,10 +189,10 @@ def do_amass_scan(target: str):
     
     amass_db_cmd = f"amass db -names -d {target}"
     amass_results = subprocess.check_output(amass_db_cmd, shell=True, stdin=subprocess.DEVNULL)
+    amass_results = amass_results.decode().splitlines()
     if "No names were discovered" in amass_results:
         LOG.warning("Amass failed to get subdomains. Check your code!")
         return
-    amass_results = amass_results.decode().splitlines()
     amass_results = list(map(lambda r: (r.strip(),), amass_results))
     
     conn.executemany("INSERT OR IGNORE INTO rawsubdomains VALUES (?)", amass_results)

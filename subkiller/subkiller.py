@@ -25,7 +25,8 @@ def get_arguments():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-d", "--domain", help="Enter a domain you want to scan for subdomains eg. tesla.com")
     group.add_argument("-f", "--file", help="Enter a file containing domains you want to scan for subdomains")
-    parser.add_argument("-o", "--output-dir", help="Specify the output directory", type=pathlib.Path, default=os.getcwd())
+    parser.add_argument("-o", "--output-dir", help="Specify the output directory", type=pathlib.Path,
+                        default=os.getcwd())
     parser.add_argument("-w", "--waybacks", action="store_true", help="Enable wayback scan. This might take a while.")
     parser.add_argument("-sp", "--spyse_key", help="Enter your spyse api key if you have one")
     parser.add_argument("-st", "--setrails_key", help="Enter your securitytrails api key if you have one")
@@ -186,9 +187,8 @@ def do_amass_scan(target: str):
     amass_cmd = f"amass enum -passive -nocolor -silent -d {target} -o {TEMP_PATH}/{target}.am"
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
-
-    target_without_tld = target.split()[0]
-    amass_regex = re.compile(fr"(.*{target_without_tld}[^\s]+)")
+    escaped_target = target.replace(".", "\.")
+    amass_regex = re.compile(fr"(.*{escaped_target})")
     try:
         with open(f"{TEMP_PATH}/{target}.am", "r") as handle:
             amass_results = handle.readlines()

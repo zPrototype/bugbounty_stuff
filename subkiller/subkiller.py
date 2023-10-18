@@ -190,8 +190,8 @@ def do_amass_scan(target: str):
     amass_db_cmd = f"amass db -names -d {target}"
     try:
         amass_results = subprocess.check_output(amass_db_cmd, shell=True, stdin=subprocess.DEVNULL)
-    except subprocess.CalledProcessError as e:
-        LOG.warning(f"Error occured: {e.output} with error code {e.returncode}")
+    except Exception as e:
+        LOG.warning(f"Error occured: {e}")
         return
     amass_results = amass_results.decode().splitlines()
     if "No names were discovered" in amass_results:

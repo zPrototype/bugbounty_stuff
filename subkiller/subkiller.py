@@ -183,20 +183,22 @@ def do_findomain_scan(target: str):
 
 def do_amass_scan(target: str):
     LOG.info("Start amass scan")
-    amass_cmd = f"amass enum -passive -nocolor -silent -d {target}"
+    amass_cmd = f"amass enum -passive -nocolor -silent -d {target} -o {TEMP_PATH}/{target}.am"
     proc = subprocess.run(amass_cmd, shell=True, stdout=subprocess.DEVNULL)
     LOG.info(f"External process completed: {proc}")
-    
-    amass_db_cmd = f"amass db -names -d {target}"
+
+    target_without_tld = target.split()[0]
+    amass_regex = re.compile(fr"(.*{target_without_tld}[^\s]+)")
     try:
-        amass_results = subprocess.check_output(amass_db_cmd, shell=True, stdin=subprocess.DEVNULL)
-    except Exception as e:
-        LOG.warning(f"Error occured: {e}")
+        with open(f"{TEMP_PATH}/{target}.am", "r") as handle:
+            amass_results = handle.readlines()
+        amass_results = "\n".join(amass_results)
+        amass_results = re.findall(amass_regex, amass_results)
+        LOG.info(f"Read result of amass with {len(amass_results)} lines")
+    except FileNotFoundError:
+        LOG.warning("Reading result file failed")
         return
-    amass_results = amass_results.decode().splitlines()
-    if "No names were discovered" in amass_results:
-        LOG.warning("Amass failed to get subdomains. Check your code!")
-        return
+
     amass_results = list(map(lambda r: (r.strip(),), amass_results))
     LOG.info(f"Read result of amass with {len(amass_results)} lines")
 

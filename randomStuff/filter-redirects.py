@@ -16,7 +16,7 @@ with open(args.file, "r") as handle:
 def generate_domain_filter(dest):
     def specific_filter(target):
         try:
-            res = requests.get(target, allow_redirects=True)
+            res = requests.get(target, allow_redirects=True, timeout=30)
             if res.url.rstrip("/") in dest:
                 return False
             return True
